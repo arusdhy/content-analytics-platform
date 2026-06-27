@@ -35,10 +35,7 @@ def get_video_metadata(url):
 # Uses yt-dlp to extract video metadata.
 # More stable than pytube.
 
-    ydl_opts = {
-        "quiet": True,
-        "skip_download": True
-    }
+    ydl_opts = { }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
@@ -46,12 +43,11 @@ def get_video_metadata(url):
         return {
             "title": info.get("title"),
             "views": info.get("view_count"),
-            "likes": info.get("like_count"),
+            "likes": info.get("like_count") or 0,  # Some videos may have likes disabled
             "description": info.get("description"),
             "length": info.get("duration"),
             "author": info.get("uploader"),
             "publish_date": info.get("upload_date"),
-            "channel": info.get("channel"),
         }
 
 
@@ -59,31 +55,10 @@ def get_video_metadata(url):
 def get_transcript(video_id):
 # Attempts to extract transcript safely.
 # Returns None if not available.
-
     try:
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-
-        # Try manually created captions first
-        try:
-            transcript = transcript_list.find_manually_created_transcript(['en'])
-        except:
-            # fallback to auto-generated captions
-            transcript = transcript_list.find_generated_transcript(['en'])
-
-        fetched = transcript.fetch()
-
-        return " ".join([t["text"] for t in fetched])
-
-    except TranscriptsDisabled:
-        print("Transcript disabled for this video")
-        return None
-
-    except NoTranscriptFound:
-        print("No transcript found for this video")
-        return None
-
-    except Exception as e:
-        print("Transcript error:", e)
+        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        return " ".join([t["text"] for t in transcript])
+    except Exception:
         return None
 
 
