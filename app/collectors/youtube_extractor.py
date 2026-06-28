@@ -6,6 +6,9 @@ import yt_dlp
 from datetime import datetime
 import time #retry feature for yt-dlp failures
 
+
+from app.utils.logger import logger #logging feature added for better debugging and monitoring
+
 # STEP 1: Extract Video ID
 def get_video_id(url):
 #Extracts YouTube video ID from URL.
@@ -34,6 +37,8 @@ def get_video_metadata(url, retries=3, delay=2):
             if upload_date:
                 upload_date = datetime.strptime(upload_date, "%Y%m%d").strftime("%Y-%m-%d")
 
+            logger.info(f"yt-dlp success on attempt {attempt+1} for URL: {url}")
+
             return {
                 "title": info.get("title") or "Unknown",
                 "views": info.get("view_count") or 0,
@@ -45,8 +50,12 @@ def get_video_metadata(url, retries=3, delay=2):
             }
 
         except Exception as e:
-            print(f"[Retry {attempt+1}/{retries}] yt-dlp failed: {e}")
-            time.sleep(delay)
+            logger.warning(
+                f"yt-dlp retry {attempt+1}/{retries} failed for {url} | Error: {e}"
+            )
+            time.sleep(delay * (attempt + 1))  #better retry delay, prevents hammering youtube servers
+
+    logger.error(f"yt-dlp FAILED after {retries} retries for URL: {url}")
 
     return {"error": "yt-dlp failed after multiple retries"}
 
@@ -57,13 +66,17 @@ def extract_youtube_data(url):
     video_id = get_video_id(url)
 
     if not video_id:
+        logger.error(f"Invalid YouTube URL: {url}")
         return {"error": "Invalid YouTube URL"}
 
     metadata = get_video_metadata(url)
 
     if "error" in metadata:
+        logger.error(f"yt-dlp failed for video_id={video_id}")
         return metadata
 
     metadata["video_id"] = video_id
 
+    logger.info(f"Successfully extracted video: {video_id}")
+    
     return metadata

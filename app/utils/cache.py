@@ -9,7 +9,10 @@ def get_cached_video(video_id):
 
 
 def set_cached_video(video_id, data):
-    VIDEO_CACHE[video_id] = data
+    VIDEO_CACHE[video_id] = {
+        "data": data,
+        "timestamp": datetime.now()
+    }
 
 
 def is_cached(video_id):

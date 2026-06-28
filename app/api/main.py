@@ -3,12 +3,9 @@
 from fastapi import FastAPI
 from app.collectors.youtube_extractor import extract_youtube_data #calling a function from youtube_extractor.py file
 from app.database.video_repository import save_video
+from app.utils.logger import logger
+from app.utils.cache import get_cached_video, set_cached_video
 
-from app.utils.cache import (
-    get_cached_video,
-    set_cached_video,
-    is_cached
-)
 
 app = FastAPI()
 
@@ -16,11 +13,14 @@ app = FastAPI()
 @app.get("/extract") 
 def extract_video(url: str):
 
+    logger.info(f"Incoming request: {url}")
+
     try: 
-        data = extract_youtube_data(url)
+        data = extract_youtube_data(url)#extract data
 
         # Handle extraction failure
         if "error" in data:
+            logger.warning(f"Extraction failed: {data['error']}")
             return {
                 "status": "error",
                 "message": data["error"]
@@ -28,28 +28,32 @@ def extract_video(url: str):
 
         video_id = data.get("video_id")
 
-        # 🔥 CHECK CACHE FIRST
+        #CACHE check: If video data is already cached, return it instead of saving to DB
         cached = get_cached_video(video_id)
-
         if cached:
+            logger.info(f"Cache hit for video_id: {video_id}")
             return {
                 "status": "success",
                 "message": "Loaded from cache",
                 "data": cached
             }
+        logger.info(f"Cache miss: {video_id}")
 
         # SAVE TO DB
         try:
             save_video(data)
         except Exception as db_error:
+            logger.error(f"DB error: {db_error}")
+
             return {
                 "status": "error",
                 "message": f"Database error: {str(db_error)}",
                 "data": data
             }
 
-        # 🔥 STORE IN CACHE
+        #STORE IN CACHE only after successful DB insert
         set_cached_video(video_id, data)
+        logger.info(f"Success pipeline completed: {video_id}")
 
         return {
             "status": "success",
@@ -58,7 +62,8 @@ def extract_video(url: str):
         }
 
     except Exception as e:
+        logger.exception(f"Unhandled error: {e}")
         return {
             "status": "error",
-            "message": f"Server error: {str(e)}"
+            "message": str(e)
         }
