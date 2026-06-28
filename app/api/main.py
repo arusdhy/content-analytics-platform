@@ -4,6 +4,8 @@ from fastapi import FastAPI
 from app.collectors.youtube_extractor import extract_youtube_data
 from app.database.video_repository import save_video, get_video_by_id
 from app.utils.logger import logger
+import pandas as pd
+
 
 app = FastAPI()
 
@@ -68,4 +70,36 @@ def extract_video(url: str):
             "status": "error",
             "message": "Internal server error",
             "data": None
+        }
+
+#FEATURE: EXPORT FULL DATASET FROM DATABASE
+@app.get("/export_all")
+def export_all_videos():
+
+    try:
+        logger.info("Export request received")
+
+        import psycopg2
+        import pandas as pd
+        from app.utils.config import DB_CONFIG
+
+        # 🔥 SAME STYLE AS YOUR REPOSITORY (consistent architecture)
+        conn = psycopg2.connect(**DB_CONFIG)
+
+        df = pd.read_sql("SELECT * FROM videos", conn)
+
+        conn.close()
+
+        return {
+            "status": "success",
+            "data": df.to_dict(orient="records")
+        }
+
+    except Exception as e:
+        logger.error(f"Export failed: {e}")
+
+        return {
+            "status": "error",
+            "message": str(e),
+            "data": []
         }

@@ -17,3 +17,28 @@ DETAIL:  Key (video_id)=(yxGbYtq1hFU) already exists.
 2026-06-28 20:38:14,197 [INFO] youtube_analytics - yt-dlp success attempt 1
 2026-06-28 20:38:14,254 [INFO] youtube_analytics - DB hit: yxGbYtq1hFU
 2026-06-28 20:38:26,047 [INFO] youtube_analytics - Incoming request: https://youtube.com/shorts/gvgnhbhbbb..
+2026-06-28 21:15:57,291 [INFO] youtube_analytics - Incoming request: https://youtube.com/shorts/tQ7P6H-CeF8?si=vqmshpe003xGYPpO
+2026-06-28 21:15:59,665 [INFO] youtube_analytics - yt-dlp success attempt 1
+2026-06-28 21:15:59,817 [INFO] youtube_analytics - Saved new video: tQ7P6H-CeF8
+2026-06-28 21:16:11,591 [INFO] youtube_analytics - Incoming request: https://youtube.com/shorts/UD2MumPh84g?si=Unh5gnpTPns7YrD3
+2026-06-28 21:16:14,700 [INFO] youtube_analytics - yt-dlp success attempt 1
+2026-06-28 21:16:14,814 [INFO] youtube_analytics - Saved new video: UD2MumPh84g
+2026-06-28 21:16:23,017 [INFO] youtube_analytics - Incoming request: https://youtube.com/shorts/9-k8N-bJkc8?si=lmOb2Ar4Q6k6kQUy
+2026-06-28 21:16:25,410 [INFO] youtube_analytics - yt-dlp success attempt 1
+2026-06-28 21:16:25,533 [INFO] youtube_analytics - Saved new video: 9-k8N-bJkc8
+2026-06-28 21:16:34,610 [INFO] youtube_analytics - Incoming request: https://youtube.com/shorts/_a3MSnMRu7c?si=PePHUGgNppCZ7mil
+2026-06-28 21:16:36,980 [INFO] youtube_analytics - yt-dlp success attempt 1
+2026-06-28 21:16:37,091 [INFO] youtube_analytics - Saved new video: _a3MSnMRu7c
+2026-06-28 21:16:44,304 [INFO] youtube_analytics - Incoming request: https://youtube.com/shorts/z0tvDz-sdkA?si=sK6Me80RvYrG3eXL
+2026-06-28 21:16:46,407 [INFO] youtube_analytics - yt-dlp success attempt 1
+2026-06-28 21:16:46,524 [INFO] youtube_analytics - Saved new video: z0tvDz-sdkA
+2026-06-28 21:16:52,703 [INFO] youtube_analytics - Incoming request: https://youtube.com/shorts/bcmOmNYBkYI?si=dmy0vC9Ux5YP3fGt
+2026-06-28 21:16:54,808 [INFO] youtube_analytics - yt-dlp success attempt 1
+2026-06-28 21:16:54,914 [INFO] youtube_analytics - Saved new video: bcmOmNYBkYI
+2026-06-28 21:17:06,791 [INFO] youtube_analytics - Incoming request: https://youtube.com/shorts/KBmi_2U7s-A?si=UE9HUDIHD0d3Dbjr
+2026-06-28 21:17:09,149 [INFO] youtube_analytics - yt-dlp success attempt 1
+2026-06-28 21:17:09,201 [INFO] youtube_analytics - DB hit: KBmi_2U7s-A
+2026-06-28 21:17:17,084 [INFO] youtube_analytics - Incoming request: https://youtube.com/shorts/BKB7nptoewc?si=X_hIy484PefJ-cK-
+2026-06-28 21:17:19,424 [INFO] youtube_analytics - yt-dlp success attempt 1
+2026-06-28 21:17:19,533 [INFO] youtube_analytics - Saved new video: BKB7nptoewc
+2026-06-28 21:40:10,521 [INFO] youtube_analytics - Export request received

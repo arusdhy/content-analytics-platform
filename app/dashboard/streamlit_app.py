@@ -74,3 +74,59 @@ if st.button("Extract Data"):
 
         df = pd.DataFrame([video])
         st.dataframe(df)
+
+        #CSV DOWNLOAD FEATURE
+        csv = df.to_csv(index=False).encode("utf-8")
+
+        st.download_button(
+            label="📥 Download CSV (This Video)",
+            data=csv,
+            file_name="youtube_video_data.csv",
+            mime="text/csv"
+        )
+#DOWNLOAD FULL DATASET FROM DATABASE
+st.divider()
+st.subheader("📦 Export Full Dataset (Database)")
+
+if st.button("Download ALL Stored Videos CSV"):
+
+    try:
+        with st.spinner("Fetching full dataset from database..."):
+
+            response = requests.get(f"{API_BASE_URL}/export_all", timeout=30)
+
+            if response.status_code != 200:
+                st.error(f"Backend error: {response.status_code}")
+                st.stop()
+
+            data = response.json()
+
+            if data.get("status") != "success":
+                st.error("Failed to fetch dataset")
+                st.stop()
+
+            records = data.get("data", [])
+
+            if not records:
+                st.warning("No data found in database")
+                st.stop()
+
+            # Convert to DataFrame
+            df = pd.DataFrame(records)
+
+            st.success(f"Exported {len(df)} videos from database")
+
+            st.dataframe(df)
+
+            # Convert to CSV
+            csv = df.to_csv(index=False).encode("utf-8")
+
+            st.download_button(
+                label="📥 Download FULL CSV (All Videos)",
+                data=csv,
+                file_name="youtube_full_dataset.csv",
+                mime="text/csv"
+            )
+
+    except requests.exceptions.RequestException as e:
+        st.error(f"Backend not reachable:\n{e}")
