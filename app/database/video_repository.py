@@ -1,33 +1,49 @@
-# Handles database operations for YouTube video data
+# Database layer for YouTube video data
 # Responsible for inserting extracted video data into PostgreSQL
 import psycopg2
 from app.utils.config import DB_CONFIG
 from app.utils.logger import logger
 
-def save_video(data):
+# CHECK IF VIDEO EXISTS
+def get_video_by_id(video_id):
 
-    #Inserts YouTube video data into PostgreSQL database
     conn = None
     cur = None
 
-    video_id = data.get("video_id")
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        cur = conn.cursor()
+
+        cur.execute("SELECT * FROM videos WHERE video_id = %s", (video_id,))
+        row = cur.fetchone()
+
+        return row
+
+    except Exception as e:
+        logger.error(f"DB fetch error: {e}")
+        return None
+
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+
+# INSERT NEW VIDEO
+def save_video(data):
+
+    conn = None
+    cur = None
 
     try:
-        logger.info(f"Connecting to DB for video_id: {video_id}")
-
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor()
 
         query = """
         INSERT INTO videos (
-            video_id,
-            title,
-            views,
-            likes,
-            duration,
-            upload_date,
-            uploader,
-            description
+            video_id, title, views, likes,
+            duration, upload_date, uploader, description
         )
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """
@@ -44,19 +60,55 @@ def save_video(data):
         ))
 
         conn.commit()
-        logger.info(f"DB insert successful for video_id: {video_id}")
-
 
     except Exception as e:
-        if conn:
-            conn.rollback()
-
-        logger.error(f"DB insert failed for {video_id}: {str(e)}")
-        raise Exception(f"Database insert failed: {str(e)}")
+        logger.error(f"DB insert error: {e}")
+        raise
 
     finally:
         if cur:
             cur.close()
         if conn:
             conn.close()
-        logger.info(f"DB connection closed for video_id: {video_id}")
+
+
+# UPDATE VIDEO
+def update_video(data):
+
+    conn = None
+    cur = None
+
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        cur = conn.cursor()
+
+        query = """
+        UPDATE videos
+        SET title=%s, views=%s, likes=%s,
+            duration=%s, upload_date=%s,
+            uploader=%s, description=%s
+        WHERE video_id=%s
+        """
+
+        cur.execute(query, (
+            data.get("title"),
+            int(data.get("views") or 0),
+            int(data.get("likes") or 0),
+            int(data.get("duration_secs") or 0),
+            data.get("publish_date"),
+            data.get("author"),
+            data.get("description"),
+            data.get("video_id"),
+        ))
+
+        conn.commit()
+
+    except Exception as e:
+        logger.error(f"DB update error: {e}")
+        raise
+
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()

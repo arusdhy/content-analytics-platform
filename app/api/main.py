@@ -1,69 +1,71 @@
 # FastAPI entry point for YouTube Content Analytics Platform
 # Handles API requests, triggers extraction, and saves data to PostgreSQL
 from fastapi import FastAPI
-from app.collectors.youtube_extractor import extract_youtube_data #calling a function from youtube_extractor.py file
-from app.database.video_repository import save_video
+from app.collectors.youtube_extractor import extract_youtube_data
+from app.database.video_repository import save_video, get_video_by_id
 from app.utils.logger import logger
-from app.utils.cache import get_cached_video, set_cached_video
-
 
 app = FastAPI()
 
 #Endpoint: Takes YouTube URL, Extracts video data, Saves to PostgreSQL, Returns structured response.
-@app.get("/extract") 
+
+@app.post("/extract")
 def extract_video(url: str):
 
     logger.info(f"Incoming request: {url}")
 
-    try: 
-        data = extract_youtube_data(url)#extract data
+    try:
+        # STEP 1: Extract data from YouTube
+        data = extract_youtube_data(url)
 
-        # Handle extraction failure
+        # Handle extraction error
         if "error" in data:
-            logger.warning(f"Extraction failed: {data['error']}")
             return {
                 "status": "error",
-                "message": data["error"]
+                "message": data["error"],
+                "data": None
             }
 
-        video_id = data.get("video_id")
+        video_id = data["video_id"]
 
-        #CACHE check: If video data is already cached, return it instead of saving to DB
-        cached = get_cached_video(video_id)
-        if cached:
-            logger.info(f"Cache hit for video_id: {video_id}")
-            return {
-                "status": "success",
-                "message": "Loaded from cache",
-                "data": cached
-            }
-        logger.info(f"Cache miss: {video_id}")
+        # STEP 2: Check if video already exists in DB
+        existing = get_video_by_id(video_id)
 
-        # SAVE TO DB
-        try:
-            save_video(data)
-        except Exception as db_error:
-            logger.error(f"DB error: {db_error}")
+        if existing:
+            logger.info(f"DB hit: {video_id}")
 
             return {
-                "status": "error",
-                "message": f"Database error: {str(db_error)}",
+                "status": "exists",
+                "message": "Video already in database",
                 "data": data
             }
 
-        #STORE IN CACHE only after successful DB insert
-        set_cached_video(video_id, data)
-        logger.info(f"Success pipeline completed: {video_id}")
+    # STEP 3: Save NEW video to database
+        try:
+            save_video(data)
+            logger.info(f"Saved new video: {video_id}")
 
+        except Exception as e:
+            logger.error(f"DB insert failed for {video_id}: {e}")
+
+            return {
+                "status": "error",
+                "message": "Database insert failed",
+                "data": None
+            }
+
+        # STEP 4: Return success response
         return {
-            "status": "success",
-            "message": "Video successfully added",
+            "status": "new",
+            "message": "Video extracted and saved",
             "data": data
         }
 
     except Exception as e:
-        logger.exception(f"Unhandled error: {e}")
+        # FIX: global safety net
+        logger.error(f"Unexpected API error: {e}")
         return {
             "status": "error",
-            "message": str(e)
+            "message": "Internal server error",
+            "data": None
         }

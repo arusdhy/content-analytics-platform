@@ -24,15 +24,15 @@ if st.button("Extract Data"):
         st.error("Please enter a valid URL")
         st.stop()
     
-    #validating the link to check if it is a youtube link or not
+    # Validate YouTube URL
     if not url.startswith(("https://www.youtube.com/", "https://youtube.com/", "https://youtu.be/")):
         st.error("Please enter a valid YouTube URL.")
         st.stop()
 
     try:
         with st.spinner("Extracting video data..."):
-
-            response = requests.get(
+            # CALL BACKEND (ENDPOINT)
+            response = requests.post(  #backend POST
                 EXTRACT_ENDPOINT,
                 params={"url": url},
                 timeout=30
@@ -44,8 +44,8 @@ if st.button("Extract Data"):
 
             try:
                 data = response.json()
-            except ValueError:
-                st.error("Invalid response from backend.")
+            except Exception:
+                st.error("Invalid JSON response from backend")
                 st.stop()
 
     except requests.exceptions.RequestException as e:
@@ -54,51 +54,23 @@ if st.button("Extract Data"):
 
 
     # Handle API response
-    if data.get("status") == "success":
+    if data.get("status") == "new":
 
-        st.success("Video extracted successfully!")
-        video = data["data"]
+        st.success("Video extracted and saved!")
 
-        views = f"{video.get('views', 0):,}"
-        likes = f"{video.get('likes', 0):,}"
+    elif data.get("status") == "exists":
 
-        duration = video.get("duration_secs", 0)
-        minutes = duration // 60
-        seconds = duration % 60
-        duration_formatted = f"{minutes}:{seconds:02}"
-        if duration == 0:
-            duration_formatted = "Unknown"
+        st.warning("Video already exists in database")
 
-        st.subheader("📹 Video Overview")
+    elif data.get("status") == "error":
 
-        col1, col2, col3 = st.columns(3)
+        st.error(data.get("message", "Unknown error"))
 
-        with col1:
-            st.write("**Title:**", video.get("title"))
-            st.write("**Author:**", video.get("author"))
+    video = data.get("data")
 
-        with col2:
-            st.write("**Views:**", views)
-            st.write("**Likes:**", likes)
+    if video:
 
-        with col3:
-            st.write("**Duration:**", duration_formatted)
-            st.write("**Publish Date:**", video.get("publish_date"))
-
-        st.subheader("📝 Description")
-        st.write(video.get("description"))
-
-        st.divider()
-
-        st.subheader("📊 Raw Data Table")
+        st.json(video)
 
         df = pd.DataFrame([video])
-
-        st.dataframe(
-            df,
-            use_container_width=True,
-            hide_index=True
-        )
-
-    else:
-        st.error(data.get("message", "Something went wrong"))
+        st.dataframe(df)

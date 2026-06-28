@@ -1,0 +1,19 @@
+2026-06-28 18:30:08,497 [INFO] youtube_analytics - Incoming request: https://youtube.com/shorts/yxGbYtq1hFU?si=iPa3Q7h5ps7hZkSe
+2026-06-28 18:30:11,400 [INFO] youtube_analytics - yt-dlp success on attempt 1 for URL: https://youtube.com/shorts/yxGbYtq1hFU?si=iPa3Q7h5ps7hZkSe
+2026-06-28 18:30:11,401 [INFO] youtube_analytics - Successfully extracted video: yxGbYtq1hFU
+2026-06-28 18:30:11,401 [INFO] youtube_analytics - Cache miss: yxGbYtq1hFU
+2026-06-28 18:30:11,401 [INFO] youtube_analytics - Connecting to DB for video_id: yxGbYtq1hFU
+2026-06-28 18:30:11,547 [ERROR] youtube_analytics - DB insert failed for yxGbYtq1hFU: duplicate key value violates unique constraint "videos_video_id_key"
+DETAIL:  Key (video_id)=(yxGbYtq1hFU) already exists.
+
+2026-06-28 18:30:11,547 [INFO] youtube_analytics - DB connection closed for video_id: yxGbYtq1hFU
+2026-06-28 18:30:11,548 [ERROR] youtube_analytics - DB error: Database insert failed: duplicate key value violates unique constraint "videos_video_id_key"
+DETAIL:  Key (video_id)=(yxGbYtq1hFU) already exists.
+
+2026-06-28 20:29:14,522 [INFO] youtube_analytics - Incoming request: https://youtube.com/shorts/yxGbYtq1hFU?si=iPa3Q7h5ps7hZkSe
+2026-06-28 20:29:16,832 [INFO] youtube_analytics - yt-dlp success attempt 1
+2026-06-28 20:29:16,969 [INFO] youtube_analytics - DB hit: yxGbYtq1hFU
+2026-06-28 20:38:12,028 [INFO] youtube_analytics - Incoming request: https://youtube.com/shorts/yxGbYtq1hFU?si=iPa3Q7h5ps7hhvvvbb
+2026-06-28 20:38:14,197 [INFO] youtube_analytics - yt-dlp success attempt 1
+2026-06-28 20:38:14,254 [INFO] youtube_analytics - DB hit: yxGbYtq1hFU
+2026-06-28 20:38:26,047 [INFO] youtube_analytics - Incoming request: https://youtube.com/shorts/gvgnhbhbbb..

@@ -6,15 +6,13 @@ import yt_dlp
 from datetime import datetime
 import time #retry feature for yt-dlp failures
 
-
 from app.utils.logger import logger #logging feature added for better debugging and monitoring
 
 # STEP 1: Extract Video ID
 def get_video_id(url):
 #Extracts YouTube video ID from URL.
 #Works for shorts and standard yt video URLs.
-
-    pattern = r"(?:v=|\/shorts\/|\/)([0-9A-Za-z_-]{11})"
+    pattern = r"(?:v=|\/shorts\/|youtu\.be\/)([0-9A-Za-z_-]{11})"
     match = re.search(pattern, url)
     return match.group(1) if match else None
 
@@ -37,7 +35,7 @@ def get_video_metadata(url, retries=3, delay=2):
             if upload_date:
                 upload_date = datetime.strptime(upload_date, "%Y%m%d").strftime("%Y-%m-%d")
 
-            logger.info(f"yt-dlp success on attempt {attempt+1} for URL: {url}")
+            logger.info(f"yt-dlp success attempt {attempt+1}")
 
             return {
                 "title": info.get("title") or "Unknown",
@@ -50,33 +48,24 @@ def get_video_metadata(url, retries=3, delay=2):
             }
 
         except Exception as e:
-            logger.warning(
-                f"yt-dlp retry {attempt+1}/{retries} failed for {url} | Error: {e}"
-            )
-            time.sleep(delay * (attempt + 1))  #better retry delay, prevents hammering youtube servers
-
-    logger.error(f"yt-dlp FAILED after {retries} retries for URL: {url}")
+            logger.warning(f"yt-dlp retry {attempt+1} failed: {e}")
+            time.sleep(delay * (attempt + 1)) #better retry delay, prevents hammering youtube servers
 
     return {"error": "yt-dlp failed after multiple retries"}
 
 # STEP 3: MASTER PIPELINE
 def extract_youtube_data(url):
 # Main function: URL → structured dataset
-
     video_id = get_video_id(url)
 
     if not video_id:
-        logger.error(f"Invalid YouTube URL: {url}")
         return {"error": "Invalid YouTube URL"}
 
     metadata = get_video_metadata(url)
 
     if "error" in metadata:
-        logger.error(f"yt-dlp failed for video_id={video_id}")
         return metadata
 
     metadata["video_id"] = video_id
 
-    logger.info(f"Successfully extracted video: {video_id}")
-    
     return metadata
