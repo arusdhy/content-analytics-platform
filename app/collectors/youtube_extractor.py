@@ -3,12 +3,7 @@
 #This is the core data ingestion layer of the system.
 import re
 import yt_dlp
-from youtube_transcript_api import (
-    YouTubeTranscriptApi,
-    TranscriptsDisabled,
-    NoTranscriptFound
-)
-
+from datetime import datetime
 #This module is responsible for extracting structured data from a YouTube video URL.
 
 #It performs the following:
@@ -31,38 +26,34 @@ def get_video_id(url):
 
 # STEP 2: Extract Metadata
 def get_video_metadata(url):
-
-# Uses yt-dlp to extract video metadata.
-# More stable than pytube.
-
-    ydl_opts = { }
-
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-
-        return {
-            "title": info.get("title"),
-            "views": info.get("view_count"),
-            "likes": info.get("like_count") or 0,  # Some videos may have likes disabled
-            "description": info.get("description"),
-            "length": info.get("duration"),
-            "author": info.get("uploader"),
-            "publish_date": info.get("upload_date"),
+    try:
+        ydl_opts = {
+            "quiet": True,
+            "no_warnings": True
         }
 
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
 
-# STEP 3: Extract Transcript 
-def get_transcript(video_id):
-# Attempts to extract transcript safely.
-# Returns None if not available.
-    try:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id)
-        return " ".join([t["text"] for t in transcript])
-    except Exception:
-        return None
+        upload_date = info.get("upload_date")
 
+        if upload_date:
+            upload_date = datetime.strptime(upload_date, "%Y%m%d").strftime("%Y-%m-%d")
 
-# STEP 4: MASTER PIPELINE
+        return {
+            "title": info.get("title") or "Unknown",
+            "views": info.get("view_count") or 0,
+            "likes": info.get("like_count") or 0,
+            "description": info.get("description") or "",
+            "duration_secs": info.get("duration") or 0,
+            "author": info.get("uploader") or "Unknown",
+            "publish_date": upload_date or None,
+        }
+
+    except Exception as e:
+        return {"error": f"yt-dlp failed: {str(e)}"}
+
+# STEP 3: MASTER PIPELINE
 def extract_youtube_data(url):
 # Main function: URL → structured dataset
 
@@ -72,17 +63,8 @@ def extract_youtube_data(url):
         return {"error": "Invalid YouTube URL"}
 
     metadata = get_video_metadata(url)
-    transcript = get_transcript(video_id)
 
-    # Attach pipeline outputs
+    # Attach the extracted video ID
     metadata["video_id"] = video_id
-    metadata["transcript"] = transcript
-    metadata["has_transcript"] = transcript is not None
-
-    # Fallback safety (important for Shorts)
-    if transcript is None:
-        metadata["transcript_source"] = "none"
-    else:
-        metadata["transcript_source"] = "youtube_api"
 
     return metadata

@@ -3,78 +3,102 @@ import streamlit as st
 import requests
 import pandas as pd  # added for proper table 'display'
 
+API_BASE_URL = "http://127.0.0.1:8000"
+EXTRACT_ENDPOINT = f"{API_BASE_URL}/extract"
+
 # Page setup
 st.set_page_config(page_title="YouTube Analytics", layout="wide")
 
 st.title("📊 YouTube Shorts Analytics Platform")
 st.write("Paste a YouTube Shorts URL to extract data insights")
 
+st.divider()
+
 # Input box
 url = st.text_input("Enter YouTube Shorts URL")
 
-# Button click
+# VALIDATION 
 if st.button("Extract Data"):
 
     if not url:
         st.error("Please enter a valid URL")
         st.stop()
+    
+    #validating the link to check if it is a youtube link or not
+    if not url.startswith(("https://www.youtube.com/", "https://youtube.com/", "https://youtu.be/")):
+        st.error("Please enter a valid YouTube URL.")
+        st.stop()
 
     try:
         with st.spinner("Extracting video data..."):
 
-            # FIX: store API endpoint separately (cleaner + reusable)
-            API_URL = "http://127.0.0.1:8000/extract"
-
             response = requests.get(
-                API_URL,
+                EXTRACT_ENDPOINT,
                 params={"url": url},
                 timeout=30
             )
 
-            # FIX: check HTTP status BEFORE parsing JSON
             if response.status_code != 200:
                 st.error(f"Backend error: {response.status_code}")
                 st.stop()
 
-            # FIX: safely parse JSON (prevents crash if backend fails)
             try:
                 data = response.json()
-            except:
+            except ValueError:
                 st.error("Invalid response from backend.")
                 st.stop()
 
-        # Handle API response
-        if data.get("status") == "success":
+    except requests.exceptions.RequestException as e:
+        st.error(f"Backend not reachable.\n\n{e}")
+        st.stop()
 
-            st.success("Video extracted successfully!")
-            video = data["data"]
 
-            # Display results
-            st.subheader("Video Details")
+    # Handle API response
+    if data.get("status") == "success":
 
+        st.success("Video extracted successfully!")
+        video = data["data"]
+
+        views = f"{video.get('views', 0):,}"
+        likes = f"{video.get('likes', 0):,}"
+
+        duration = video.get("duration_secs", 0)
+        minutes = duration // 60
+        seconds = duration % 60
+        duration_formatted = f"{minutes}:{seconds:02}"
+        if duration == 0:
+            duration_formatted = "Unknown"
+
+        st.subheader("📹 Video Overview")
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
             st.write("**Title:**", video.get("title"))
-            st.write("**Views:**", video.get("views"))
-            st.write("**Likes:**", video.get("likes"))
-            st.write("**Description:**", video.get("description"))
-            st.write("**Duration:**", video.get("length"))
             st.write("**Author:**", video.get("author"))
+
+        with col2:
+            st.write("**Views:**", views)
+            st.write("**Likes:**", likes)
+
+        with col3:
+            st.write("**Duration:**", duration_formatted)
             st.write("**Publish Date:**", video.get("publish_date"))
 
-            st.subheader("Transcript")
+        st.subheader("📝 Description")
+        st.write(video.get("description"))
 
-            if video.get("transcript"):
-                st.write(video["transcript"])
-            else:
-                st.warning("No transcript available")
+        st.divider()
 
-            # TABLE format
-            st.subheader("📊 Data Table View")
+        st.subheader("📊 Raw Data Table")
 
-            # FIX: better dataframe rendering (cleaner + safer)
-            st.dataframe(pd.DataFrame([video]))
+        df = pd.DataFrame([video])
 
-        else:
-            st.error(data.get("message", "Something went wrong"))
+        st.dataframe(
+            df,
+            use_container_width=True,
+            hide_index=True
+        )
 
-    except requests.exceptions.RequestException:
-        st.error("Backend not reachable. Is FastAPI running?")
+    else:
+        st.error(data.get("message", "Something went wrong"))

@@ -1,53 +1,53 @@
+# Handles database operations for YouTube video data
+# Responsible for inserting extracted video data into PostgreSQL
 import psycopg2
 from app.utils.config import DB_CONFIG
 
 
 def save_video(data):
-    """
-    Saves extracted YouTube video data into PostgreSQL
-    """
+
+    #Inserts YouTube video data into PostgreSQL database
+    conn = None
+    cur = None
 
     try:
-        # Connect to database
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor()
 
-        # SQL INSERT query (MUST be inside triple quotes)
         query = """
         INSERT INTO videos (
             video_id,
             title,
             views,
             likes,
-            comments,
             duration,
             upload_date,
+            uploader,
             description
         )
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """
 
-        # Execute query with extracted data
         cur.execute(query, (
             data.get("video_id"),
             data.get("title"),
-            data.get("views"),
-            data.get("likes"),
-            0,  # comments placeholder (since not extracted yet)
-            data.get("length"),
+            int(data.get("views") or 0),
+            int(data.get("likes") or 0),
+            int(data.get("duration_secs") or 0),
             data.get("publish_date"),
-            data.get("description")
+            data.get("author"),
+            data.get("description"),
         ))
 
-        # Commit changes
         conn.commit()
 
-        print("Database insert successful!")
-
     except Exception as e:
-        print("Database error:", e)
+        if conn:
+            conn.rollback()
+        raise Exception(f"Database insert failed: {str(e)}")
 
     finally:
-        # Always close connection
-        if 'conn' in locals():
+        if cur:
+            cur.close()
+        if conn:
             conn.close()

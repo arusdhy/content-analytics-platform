@@ -1,11 +1,11 @@
-# Configuration file for database connection settings
+# Loads environment variables for database configuration
 import os
-# Import function that loads variables from .env file into the environment
 from dotenv import load_dotenv
-# Load variables from .env file into environment variables
+
 load_dotenv()
-# Create a dictionary that stores database configuration
-# Values are pulled from environment variables (not hardcoded for security)
+
+print("ENV FILE LOADED:", os.path.exists(".env"))
+
 DB_CONFIG = {
     "dbname": os.getenv("DB_NAME"),
     "user": os.getenv("DB_USER"),
