@@ -4,6 +4,12 @@ from fastapi import FastAPI
 from app.collectors.youtube_extractor import extract_youtube_data #calling a function from youtube_extractor.py file
 from app.database.video_repository import save_video
 
+from app.utils.cache import (
+    get_cached_video,
+    set_cached_video,
+    is_cached
+)
+
 app = FastAPI()
 
 #Endpoint: Takes YouTube URL, Extracts video data, Saves to PostgreSQL, Returns structured response.
@@ -20,7 +26,19 @@ def extract_video(url: str):
                 "message": data["error"]
             }
 
-        #DB INSERT
+        video_id = data.get("video_id")
+
+        # 🔥 CHECK CACHE FIRST
+        cached = get_cached_video(video_id)
+
+        if cached:
+            return {
+                "status": "success",
+                "message": "Loaded from cache",
+                "data": cached
+            }
+
+        # SAVE TO DB
         try:
             save_video(data)
         except Exception as db_error:
@@ -30,11 +48,15 @@ def extract_video(url: str):
                 "data": data
             }
 
+        # 🔥 STORE IN CACHE
+        set_cached_video(video_id, data)
+
         return {
             "status": "success",
             "message": "Video successfully added",
             "data": data
         }
+
     except Exception as e:
         return {
             "status": "error",

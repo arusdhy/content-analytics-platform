@@ -4,14 +4,7 @@
 import re
 import yt_dlp
 from datetime import datetime
-#This module is responsible for extracting structured data from a YouTube video URL.
-
-#It performs the following:
-#1. Extracts the video ID from a YouTube URL
-#2. Fetches video metadata (title, views, likes, etc.)
-#3. Retrieves transcript (if available)
-#4. Combines everything into a single structured dictionary
-
+import time #retry feature for yt-dlp failures
 
 # STEP 1: Extract Video ID
 def get_video_id(url):
@@ -20,38 +13,42 @@ def get_video_id(url):
 
     pattern = r"(?:v=|\/shorts\/|\/)([0-9A-Za-z_-]{11})"
     match = re.search(pattern, url)
-
     return match.group(1) if match else None
 
 
-# STEP 2: Extract Metadata
-def get_video_metadata(url):
-    try:
-        ydl_opts = {
-            "quiet": True,
-            "no_warnings": True
-        }
+# STEP 2: Extract Metadata (with retry mechanism))
+def get_video_metadata(url, retries=3, delay=2):
+    for attempt in range(retries):
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
+        try:
+            ydl_opts = {
+                "quiet": True,
+                "no_warnings": True
+            }
 
-        upload_date = info.get("upload_date")
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
 
-        if upload_date:
-            upload_date = datetime.strptime(upload_date, "%Y%m%d").strftime("%Y-%m-%d")
+            upload_date = info.get("upload_date")
 
-        return {
-            "title": info.get("title") or "Unknown",
-            "views": info.get("view_count") or 0,
-            "likes": info.get("like_count") or 0,
-            "description": info.get("description") or "",
-            "duration_secs": info.get("duration") or 0,
-            "author": info.get("uploader") or "Unknown",
-            "publish_date": upload_date or None,
-        }
+            if upload_date:
+                upload_date = datetime.strptime(upload_date, "%Y%m%d").strftime("%Y-%m-%d")
 
-    except Exception as e:
-        return {"error": f"yt-dlp failed: {str(e)}"}
+            return {
+                "title": info.get("title") or "Unknown",
+                "views": info.get("view_count") or 0,
+                "likes": info.get("like_count") or 0,
+                "description": info.get("description") or "",
+                "duration_secs": info.get("duration") or 0,
+                "author": info.get("uploader") or "Unknown",
+                "publish_date": upload_date or None,
+            }
+
+        except Exception as e:
+            print(f"[Retry {attempt+1}/{retries}] yt-dlp failed: {e}")
+            time.sleep(delay)
+
+    return {"error": "yt-dlp failed after multiple retries"}
 
 # STEP 3: MASTER PIPELINE
 def extract_youtube_data(url):
@@ -64,7 +61,9 @@ def extract_youtube_data(url):
 
     metadata = get_video_metadata(url)
 
-    # Attach the extracted video ID
+    if "error" in metadata:
+        return metadata
+
     metadata["video_id"] = video_id
 
     return metadata
